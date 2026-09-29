@@ -47,8 +47,11 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-
 .hero>*{position:relative}
 .hero .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
 .hero .car{font-size:1.2rem;font-weight:800;margin-top:2px;letter-spacing:-.01em}
-.hero .meta{font-size:.78rem;opacity:.75;margin-top:3px}
-.app.compact .hero{padding:9px 16px;border-radius:16px}.app.compact .hero .lbl,.app.compact .hero .meta,.app.compact .vsel{margin-top:8px;font:inherit;font-size:.8rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:5px 10px;max-width:100%}
+.hero>div:first-child{min-width:0;flex:1}
+.hero .car{overflow-wrap:anywhere}
+.hero .meta{font-size:.78rem;opacity:.75;margin-top:3px;max-width:100%;overflow-wrap:anywhere}
+.app.compact .hero{padding:9px 16px;border-radius:16px}.app.compact .hero .lbl,.app.compact .hero .meta,.app.compact .vsel{margin-top:8px;font:inherit;font-size:.8rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;color:#fff;border-radius:999px;padding:5px 28px 5px 10px;max-width:100%;width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.vsel option{color:#111}
 .hero .ico{display:none}.app.compact .hero .car{font-size:.95rem;margin:0}.app.compact .top{padding-block:8px 6px}.app.compact .top h1{font-size:1.2rem}
 .hero .ico{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);display:grid;place-items:center;flex:0 0 auto}
 .hero .ico svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
