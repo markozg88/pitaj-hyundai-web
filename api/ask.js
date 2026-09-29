@@ -99,10 +99,11 @@ export async function POST(req) {
           } catch {}
         }
         const q0 = (question + ' ' + kw + ' ' + (kw ? '' : desc)).trim();
-        const hits = searchMulti(idx, [q0, ...alts], 10);
+        const howTo = /^\s*(kako|na koji na[čc]in|gdje|što trebam|sto trebam)/i.test(question);
+        const hits = searchMulti(idx, [q0, ...alts], 14, { howTo });
         sse(ctl, enc, 'sources', { hits: hits.map((h, i) => ({ n: i + 1, page: h.p, label: h.l, chapter: h.c, h1: h.h1, h2: h.h2, h3: h.h3, snippet: h.t.slice(0, 220), img: h.img || null })) });
         if (!hits.length) { sse(ctl, enc, 'delta', { text: 'U priručniku nisam pronašao odlomak koji odgovara na to pitanje. Pokušajte preformulirati ili se obratite ovlaštenom Hyundai partneru (0800 1111).' }); sse(ctl, enc, 'done', { symbols: [] }); ctl.close(); return; }
-        const ctx = hits.map((h, i) => `[Izvadak ${i + 1} | poglavlje: ${h.c} | ${h.h1}${h.h2 ? ' › ' + h.h2 : ''}${h.h3 ? ' › ' + h.h3 : ''} | label: ${h.l || '?'}${h.img ? ' | [SIMBOL]' : ''}]\n${h.t.slice(0, 1600)}`).join('\n\n');
+        const ctx = hits.map((h, i) => `[Izvadak ${i + 1} | poglavlje: ${h.c} | ${h.h1}${h.h2 ? ' › ' + h.h2 : ''}${h.h3 ? ' › ' + h.h3 : ''} | label: ${h.l || '?'}${h.img ? ' | [SIMBOL]' : ''}]\n${h.t.slice(0, 1300)}`).join('\n\n');
         const userTurn = `IZVATCI IZ PRIRUČNIKA:\n${ctx}\n\n${desc ? 'VLASNIK JE POSLAO FOTOGRAFIJU. Opis fotografije: ' + desc.replace(/KLJUČNE RIJEČI:.*$/im, '').trim() + '\n\n' : ''}PITANJE VLASNIKA: ${question || 'Što je ovo na slici i što trebam učiniti?'}`;
         const msgs = [...history.slice(-6).filter(t => t && (t.role === 'user' || t.role === 'assistant') && t.content), { role: 'user', content: userTurn }];
         // 5) odgovor, streaming
