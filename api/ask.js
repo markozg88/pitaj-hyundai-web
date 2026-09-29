@@ -51,7 +51,7 @@ function limitOk(ref) {
 
 const sse = (ctl, enc, event, data) => ctl.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
 
-export default async function handler(req) {
+export async function POST(req) {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'llm_not_configured' }, { status: 503 });
   let body; try { body = await req.json(); } catch { return Response.json({ error: 'bad_json' }, { status: 400 }); }

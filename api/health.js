@@ -1,4 +1,4 @@
-export default async function handler() {
+export async function GET() {
   return Response.json({
     ok: true,
     llm: !!process.env.ANTHROPIC_API_KEY,
