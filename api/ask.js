@@ -1,7 +1,7 @@
 // POST /api/ask  – odgovor iz korisničkog priručnika (streaming, text/event-stream)
 // Tijelo: { token?, model, question, image?, history?: [{role, content}] }
 // Okolina: ANTHROPIC_API_KEY, PHOEBE_MACHINE_KEY, PHOEBE_BFF_URL, ANTHROPIC_MODEL?, ANTHROPIC_QUICK_MODEL?, ALLOW_DEMO?
-import { buildIndex, search } from '../lib/retrieval.js';
+import { buildIndex, search, searchMulti } from '../lib/retrieval.js';
 
 export const config = { runtime: 'edge' };
 
@@ -10,7 +10,7 @@ const QUICK = process.env.ANTHROPIC_QUICK_MODEL || 'claude-haiku-4-5-20251001';
 const DAILY_LIMIT = Number(process.env.DAILY_LIMIT || 30);
 const RULES = `Ti si asistent za vlasnike Hyundai vozila u Hrvatskoj ("Pitaj Hyundai"). Odgovaraš ISKLJUČIVO na temelju izvadaka iz službenog korisničkog priručnika koje dobiješ u poruci.
 Pravila:
-1. Odgovaraj na hrvatskom, kratko i jasno, kao ljubazan savjetnik u servisu. Počni jednim kratkim podebljanim naslovom (**...**) koji imenuje o čemu je riječ, zatim 2–5 kratkih rečenica; nabrajanja samo kad su koraci.
+1. Odgovaraj na hrvatskom, kratko i jasno, kao ljubazan savjetnik u servisu. Počni jednim kratkim podebljanim naslovom (**...**) koji imenuje o čemu je riječ, zatim najviše oko 150 riječi; nabrajanja samo kad su koraci (tada nabroji korake iz priručnika redom). Ne ponavljaj isto više puta.
 2. Iza svake tvrdnje navedi stranicu u obliku [str. 5-13] koristeći "label" izvatka iz kojeg je tvrdnja.
 3. Ako izvatci ne sadrže odgovor, reci to otvoreno ("U priručniku nisam pronašao…") i preporuči ovlaštenog Hyundai partnera ili besplatni broj 0800 1111. Nikad ne izmišljaj podatke, brojke ni postupke.
 4. Sigurnosne napomene (OPASNOST, UPOZORENJE, OPREZ, OPASKA) bitne za pitanje prenesi doslovno, u zasebnom retku koji počinje tom riječju.
@@ -90,8 +90,16 @@ export default async function handler(req) {
           if (r.ok) { const j = await r.json(); desc = (j.content || []).map(c => c.text || '').join('').trim(); }
         }
         const kw = desc ? (desc.match(/KLJUČNE RIJEČI:\s*(.+)$/im) || [])[1] || '' : '';
-        // 4) pretraga
-        const hits = search(idx, (question + ' ' + kw + ' ' + (kw ? '' : desc)).trim(), 10);
+        // 4) prijevod pitanja u rječnik priručnika (brzi model), pa pretraga s više upita
+        let alts = [];
+        if (question && question.length > 3) {
+          try {
+            const r = await claude({ model: QUICK, max_tokens: 200, messages: [{ role: 'user', content: `Vlasnik Hyundai vozila pita: "${question}"\nNapiši 3 kratka upita (3–6 riječi) kojima bi se to tražilo u korisničkom priručniku, rječnikom priručnika (npr. "punjenje visokonaponske baterije", "svjetlo upozorenja tlaka ulja", "raspored održavanja"). Jedan po retku, bez brojeva i bez objašnjenja.` }] });
+            if (r.ok) { const j = await r.json(); alts = (j.content || []).map(c => c.text || '').join('').split('\n').map(x => x.replace(/^[-•\d.\s"]+|"$/g, '').trim()).filter(x => x.length > 3).slice(0, 3); }
+          } catch {}
+        }
+        const q0 = (question + ' ' + kw + ' ' + (kw ? '' : desc)).trim();
+        const hits = searchMulti(idx, [q0, ...alts], 10);
         sse(ctl, enc, 'sources', { hits: hits.map((h, i) => ({ n: i + 1, page: h.p, label: h.l, chapter: h.c, h1: h.h1, h2: h.h2, h3: h.h3, snippet: h.t.slice(0, 220), img: h.img || null })) });
         if (!hits.length) { sse(ctl, enc, 'delta', { text: 'U priručniku nisam pronašao odlomak koji odgovara na to pitanje. Pokušajte preformulirati ili se obratite ovlaštenom Hyundai partneru (0800 1111).' }); sse(ctl, enc, 'done', { symbols: [] }); ctl.close(); return; }
         const ctx = hits.map((h, i) => `[Izvadak ${i + 1} | poglavlje: ${h.c} | ${h.h1}${h.h2 ? ' › ' + h.h2 : ''}${h.h3 ? ' › ' + h.h3 : ''} | label: ${h.l || '?'}${h.img ? ' | [SIMBOL]' : ''}]\n${h.t.slice(0, 1600)}`).join('\n\n');
@@ -99,7 +107,7 @@ export default async function handler(req) {
         const msgs = [...history.slice(-6).filter(t => t && (t.role === 'user' || t.role === 'assistant') && t.content), { role: 'user', content: userTurn }];
         // 5) odgovor, streaming
         sse(ctl, enc, 'status', { text: 'Sastavljam odgovor…' });
-        const r = await claude({ model: MODEL, max_tokens: 900, system: RULES, messages: msgs }, true);
+        const r = await claude({ model: MODEL, max_tokens: 1400, system: RULES, messages: msgs }, true);
         if (!r.ok) { sse(ctl, enc, 'error', { code: 'llm_error', http: r.status }); ctl.close(); return; }
         const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '', full = '';
         while (true) {
