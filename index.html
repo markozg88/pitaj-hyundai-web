@@ -264,9 +264,36 @@ function setPhoto(f){photo=f||null;if(photo){pimg.src=URL.createObjectURL(photo)
 camBtn.onclick=()=>{if(imgOK===false){add('bot','<div class="body"><p class="status">U ovom prikazu slanje fotografija nije podržano. Otvorite prototip u pregledniku na računalu ili mobitelu; u pravoj aplikaciji kamera bi bila nativna.</p></div>');return}camIn.click()};
 camIn.addEventListener('change',()=>{if(camIn.files&&camIn.files[0])setPhoto(camIn.files[0])});
 pdel.onclick=()=>setPhoto(null);
-let imgOK=null;
-(window.claude&&typeof window.claude.use==='function'?window.claude.use('sample'):Promise.resolve(null)).then(s=>{sample=s;if(s){camBtn.hidden=false;s.limits().then(l=>{imgOK=!!(l&&l.images);if(imgOK)camIn.accept=l.images.mediaTypes.join(',')||'image/*'}).catch(()=>{imgOK=null})}if(!s)add('bot','<div class="body"><p class="status">Generiranje odgovora nije dostupno u ovom prikazu; prikazivat ću samo pronađene odlomke iz priručnika.</p></div>')}).catch(()=>{});
+let imgOK=null, API=null;  // API = '/api/ask' kad poslužitelj modula postoji
+fetch('api/health',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(h=>{if(h&&h.ok&&h.llm){API='api/ask';camBtn.hidden=false;imgOK=true;const n=document.getElementById('nollm');if(n)n.remove()}}).catch(()=>{});
+(window.claude&&typeof window.claude.use==='function'?window.claude.use('sample'):Promise.resolve(null)).then(s=>{sample=s;if(s){camBtn.hidden=false;s.limits().then(l=>{imgOK=!!(l&&l.images);if(imgOK)camIn.accept=l.images.mediaTypes.join(',')||'image/*'}).catch(()=>{imgOK=null})}if(!s&&!API){const r=add('bot','<div class="body"><p class="status">Generiranje odgovora nije dostupno u ovom prikazu; prikazivat ću samo pronađene odlomke iz priručnika.</p></div>');r.id='nollm'}}).catch(()=>{});
 const ERR={not_granted:'Bez dopuštenja za korištenje Claudea ne mogu sastaviti odgovor; ispod su pronađeni odlomci.',rate_limited:'Previše upita odjednom. Pričekajte malo pa pokušajte ponovno.',prompt_too_large:'Pitanje je predugo. Skratite ga.',refused:'Na ovo pitanje ne mogu odgovoriti.',upstream_error:'Veza je prekinuta. Pokušajte ponovno.'};
+async function fileToDataUrl(f){const bmp=await createImageBitmap(f);const sc=Math.min(1,1280/Math.max(bmp.width,bmp.height));const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85)}
+const BERR={invalid_token:'Sesija modula je istekla. Zatvorite i ponovno otvorite Pitaj Hyundai.',token_required:'Ovaj poslužitelj prima upite samo iz aplikacije.',daily_limit:'Dosegnut je dnevni broj pitanja. Pokušajte sutra ili nazovite 0800 1111.',unknown_manual:'Za ovo vozilo priručnik još nije dostupan.',llm_not_configured:'Poslužitelj još nije podešen.',image_rejected:'Fotografija nije prihvaćena. Pokušajte s drugom slikom.',llm_error:'Sastavljanje odgovora trenutno ne radi. Pokušajte ponovno.',server_error:'Greška na poslužitelju. Pokušajte ponovno.'};
+async function askBackend(text,img,body,bot){
+  send.disabled=true;stopB.hidden=false;ctl=new AbortController();
+  let hits=[],full='',res=null;
+  try{
+    const payload={token:CFG&&CFG.token||null,model:CUR_MANUAL,question:text,history:turns.slice(-6)};
+    if(img)payload.image=await fileToDataUrl(img);
+    res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctl.signal});
+    if(!res.ok){let j={};try{j=await res.json()}catch{}body.innerHTML=`<p class="status">${BERR[j.error]||BERR.server_error}</p>`;return}
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='',symsPick=null;
+    while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
+      const parts=buf.split('\n\n');buf=parts.pop();
+      for(const p of parts){const m=p.match(/^event: (\w+)\ndata: (.*)$/s);if(!m)continue;let d={};try{d=JSON.parse(m[2])}catch{continue}
+        if(m[1]==='sources'){hits=d.hits.map(h=>({p:h.page,l:h.label,c:h.chapter,h1:h.h1,h2:h.h2,h3:h.h3,t:h.snippet,img:h.img}))}
+        else if(m[1]==='status'){if(!full)body.innerHTML=`<p class="status">${esc(d.text)}</p>`}
+        else if(m[1]==='delta'){full+=d.text;body.innerHTML=md(full.replace(/\n?\s*SIMBOLI:.*$/im,''));log.scrollTop=log.scrollHeight}
+        else if(m[1]==='done'){symsPick=d.symbols&&d.symbols.length?new Set(d.symbols):null}
+        else if(m[1]==='error'){body.innerHTML=md(full)+`<p class="status">${BERR[d.code]||BERR.server_error}</p>`;return}
+      }}
+    const clean=full.replace(/\n?\s*SIMBOLI:.*$/im,'').trim();
+    turns.push({role:'user',content:text||'Što je ovo na slici?'},{role:'assistant',content:clean});if(turns.length>6)turns=turns.slice(-6);
+    body.innerHTML=md(clean||'U priručniku nisam pronašao odgovor. Obratite se ovlaštenom Hyundai partneru (0800 1111).')+(symsPick?symbols(hits,symsPick):'')+(hits.length?sources(hits):'');
+  }catch(err){if(err.name==='AbortError'){body.innerHTML=md(full)||'<p class="status">Prekinuto.</p>'}else{body.innerHTML=md(full)+`<p class="status">${BERR.server_error}</p>`}}
+  finally{send.disabled=false;stopB.hidden=true;ctl=null;log.scrollTop=log.scrollHeight;q.focus()}
+}
 form.addEventListener('submit',async e=>{
   e.preventDefault();let text=q.value.trim();const img=photo;if(!text&&!img)return;q.value='';
   document.querySelector('.app').classList.add('compact');
@@ -274,6 +301,7 @@ form.addEventListener('submit',async e=>{
   setPhoto(null);
   const bot=add('bot','<div class="body">'+TYPING+'</div>');
   const body=bot.querySelector('.body');
+  if(API){await askBackend(text,img,body,bot);return}
   let desc='';
   if(img&&sample){
     send.disabled=true;
