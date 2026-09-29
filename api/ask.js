@@ -1,7 +1,7 @@
 // POST /api/ask  – odgovor iz korisničkog priručnika (streaming, text/event-stream)
 // Tijelo: { token?, model, question, image?, history?: [{role, content}] }
 // Okolina: ANTHROPIC_API_KEY, PHOEBE_MACHINE_KEY, PHOEBE_BFF_URL, ANTHROPIC_MODEL?, ANTHROPIC_QUICK_MODEL?, ALLOW_DEMO?
-import { buildIndex, search, searchMulti } from '../lib/retrieval.js';
+import { buildIndex, search, searchMulti, expandSections } from '../lib/retrieval.js';
 
 export const config = { runtime: 'nodejs', maxDuration: 60 };
 
@@ -100,10 +100,11 @@ export async function POST(req) {
         }
         const q0 = (question + ' ' + kw + ' ' + (kw ? '' : desc)).trim();
         const howTo = /^\s*(kako|na koji na[čc]in|gdje|što trebam|sto trebam)/i.test(question);
-        const hits = searchMulti(idx, [q0, ...alts], 14, { howTo });
+        const raw = searchMulti(idx, [q0, ...alts], 14, { howTo });
+        const hits = expandSections(idx, raw);
         sse(ctl, enc, 'sources', { hits: hits.map((h, i) => ({ n: i + 1, page: h.p, label: h.l, chapter: h.c, h1: h.h1, h2: h.h2, h3: h.h3, snippet: h.t.slice(0, 220), img: h.img || null })) });
         if (!hits.length) { sse(ctl, enc, 'delta', { text: 'U priručniku nisam pronašao odlomak koji odgovara na to pitanje. Pokušajte preformulirati ili se obratite ovlaštenom Hyundai partneru (0800 1111).' }); sse(ctl, enc, 'done', { symbols: [] }); ctl.close(); return; }
-        const ctx = hits.map((h, i) => `[Izvadak ${i + 1} | poglavlje: ${h.c} | ${h.h1}${h.h2 ? ' › ' + h.h2 : ''}${h.h3 ? ' › ' + h.h3 : ''} | label: ${h.l || '?'}${h.img ? ' | [SIMBOL]' : ''}]\n${h.t.slice(0, 1300)}`).join('\n\n');
+        const ctx = hits.map((h, i) => `[Izvadak ${i + 1} | poglavlje: ${h.c} | ${h.h1}${h.h2 ? ' › ' + h.h2 : ''}${h.h3 ? ' › ' + h.h3 : ''} | label: ${h.l || '?'}${h.img ? ' | [SIMBOL]' : ''}]\n${h.t}`).join('\n\n');
         const userTurn = `IZVATCI IZ PRIRUČNIKA:\n${ctx}\n\n${desc ? 'VLASNIK JE POSLAO FOTOGRAFIJU. Opis fotografije: ' + desc.replace(/KLJUČNE RIJEČI:.*$/im, '').trim() + '\n\n' : ''}PITANJE VLASNIKA: ${question || 'Što je ovo na slici i što trebam učiniti?'}`;
         const msgs = [...history.slice(-6).filter(t => t && (t.role === 'user' || t.role === 'assistant') && t.content), { role: 'user', content: userTurn }];
         // 5) odgovor, streaming
