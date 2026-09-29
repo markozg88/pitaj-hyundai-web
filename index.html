@@ -151,8 +151,7 @@ let PDF='';
 async function loadManual(code){
   const m=MANUALS.find(x=>x.code===code);if(!m||!m.indexed)return false;
   document.getElementById('meta').textContent='Učitavam priručnik…';
-  const r=await fetch('index/'+code+'.json');if(!r.ok)return false;
-  DOCS=await r.json();PDF=m.url||'';buildIndex();
+  if(window.__INLINE_INDEX__&&window.__INLINE_INDEX__[code]){DOCS=window.__INLINE_INDEX__[code]}else{const r=await fetch('index/'+code+'.json');if(!r.ok)return false;DOCS=await r.json();}PDF=m.url||'';buildIndex();
   document.getElementById('meta').textContent=m.title+' · '+DOCS.length+' odlomaka'+(m.pages?' · '+m.pages+' str.':'');
   return true;
 }
@@ -263,7 +262,7 @@ camBtn.onclick=()=>{if(imgOK===false){add('bot','<div class="body"><p class="sta
 camIn.addEventListener('change',()=>{if(camIn.files&&camIn.files[0])setPhoto(camIn.files[0])});
 pdel.onclick=()=>setPhoto(null);
 let imgOK=null;
-claude.use('sample').then(s=>{sample=s;if(s){camBtn.hidden=false;s.limits().then(l=>{imgOK=!!(l&&l.images);if(imgOK)camIn.accept=l.images.mediaTypes.join(',')||'image/*'}).catch(()=>{imgOK=null})}if(!s)add('bot','<div class="body"><p class="status">Generiranje odgovora nije dostupno u ovom prikazu; prikazivat ću samo pronađene odlomke iz priručnika.</p></div>')}).catch(()=>{});
+(window.claude&&typeof window.claude.use==='function'?window.claude.use('sample'):Promise.resolve(null)).then(s=>{sample=s;if(s){camBtn.hidden=false;s.limits().then(l=>{imgOK=!!(l&&l.images);if(imgOK)camIn.accept=l.images.mediaTypes.join(',')||'image/*'}).catch(()=>{imgOK=null})}if(!s)add('bot','<div class="body"><p class="status">Generiranje odgovora nije dostupno u ovom prikazu; prikazivat ću samo pronađene odlomke iz priručnika.</p></div>')}).catch(()=>{});
 const ERR={not_granted:'Bez dopuštenja za korištenje Claudea ne mogu sastaviti odgovor; ispod su pronađeni odlomci.',rate_limited:'Previše upita odjednom. Pričekajte malo pa pokušajte ponovno.',prompt_too_large:'Pitanje je predugo. Skratite ga.',refused:'Na ovo pitanje ne mogu odgovoriti.',upstream_error:'Veza je prekinuta. Pokušajte ponovno.'};
 form.addEventListener('submit',async e=>{
   e.preventDefault();let text=q.value.trim();const img=photo;if(!text&&!img)return;q.value='';
