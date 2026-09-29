@@ -300,19 +300,18 @@ async function askBackend(text,img,body,bot){
     res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctl.signal});
     if(!res.ok){let j={};try{j=await res.json()}catch{}body.innerHTML=`<p class="status">${BERR[j.error]||BERR.server_error}</p>`;return}
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='',symsPick=null;
-    while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
-      const parts=buf.split('\n\n');buf=parts.pop();
-      for(const p of parts){const m=p.match(/^event: (\w+)\ndata: (.*)$/s);if(!m)continue;let d={};try{d=JSON.parse(m[2])}catch{continue}
+    const handleEv=p=>{const m=p.match(/^event: (\w+)\ndata: (.*)$/s);if(!m)return;let d={};try{d=JSON.parse(m[2])}catch{return}
         if(m[1]==='sources'){hits=d.hits.map(h=>({p:h.page,l:h.label,c:h.chapter,h1:h.h1,h2:h.h2,h3:h.h3,t:h.snippet,img:h.img}))}
         else if(m[1]==='status'){if(!full)body.innerHTML=`<p class="status">${esc(d.text)}</p>`}
         else if(m[1]==='delta'){full+=d.text;body.innerHTML=md(full.replace(/\n?\s*SIMBOLI:.*$/im,''));log.scrollTop=log.scrollHeight}
         else if(m[1]==='done'){symsPick=d.symbols&&d.symbols.length?new Set(d.symbols):null}
-        else if(m[1]==='error'){body.innerHTML=md(full)+`<p class="status">${BERR[d.code]||BERR.server_error}</p>`;return}
-      }}
+        else if(m[1]==='error'){throw Object.assign(new Error(d.code),{code:d.code})}};
+    while(true){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split('\n\n');buf=parts.pop();parts.forEach(handleEv)}
+    buf+=dec.decode();if(buf.trim())buf.split('\n\n').forEach(handleEv);
     const clean=full.replace(/\n?\s*SIMBOLI:.*$/im,'').trim();
     turns.push({role:'user',content:text||'Što je ovo na slici?'},{role:'assistant',content:clean});if(turns.length>6)turns=turns.slice(-6);
     body.innerHTML=md(clean||'U priručniku nisam pronašao odgovor. Obratite se ovlaštenom Hyundai partneru (0800 1111).')+(symsPick?symbols(hits,symsPick):'')+(hits.length?sources(hits):'');
-  }catch(err){if(err.name==='AbortError'){body.innerHTML=md(full)||'<p class="status">Prekinuto.</p>'}else{body.innerHTML=md(full)+`<p class="status">${BERR.server_error}</p>`}}
+  }catch(err){if(err.name==='AbortError'){body.innerHTML=md(full)||'<p class="status">Prekinuto.</p>'}else{body.innerHTML=md(full)+`<p class="status">${BERR[err.code]||BERR.server_error}</p>`}}
   finally{send.disabled=false;stopB.hidden=true;ctl=null;log.scrollTop=log.scrollHeight;q.focus()}
 }
 form.addEventListener('submit',async e=>{

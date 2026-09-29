@@ -3,7 +3,7 @@
 // Okolina: ANTHROPIC_API_KEY, PHOEBE_MACHINE_KEY, PHOEBE_BFF_URL, ANTHROPIC_MODEL?, ANTHROPIC_QUICK_MODEL?, ALLOW_DEMO?
 import { buildIndex, search, searchMulti } from '../lib/retrieval.js';
 
-export const config = { runtime: 'edge' };
+export const maxDuration = 60;  // Node runtime (Hobby dopušta do 60 s)
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const QUICK = process.env.ANTHROPIC_QUICK_MODEL || 'claude-haiku-4-5-20251001';
@@ -110,15 +110,18 @@ export default async function handler(req) {
         const r = await claude({ model: MODEL, max_tokens: 1400, system: RULES, messages: msgs }, true);
         if (!r.ok) { sse(ctl, enc, 'error', { code: 'llm_error', http: r.status }); ctl.close(); return; }
         const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '', full = '';
+        const handle = line => {
+          if (!line.startsWith('data: ')) return;
+          let ev; try { ev = JSON.parse(line.slice(6)); } catch { return; }
+          if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) { full += ev.delta.text; sse(ctl, enc, 'delta', { text: ev.delta.text }); }
+          if (ev.type === 'message_delta' && ev.delta && ev.delta.stop_reason === 'max_tokens') sse(ctl, enc, 'status', { text: 'Odgovor je skraćen.' });
+        };
         while (true) {
           const { value, done } = await reader.read(); if (done) break;
           buf += dec.decode(value, { stream: true }); const lines = buf.split('\n'); buf = lines.pop();
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            let ev; try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-            if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) { full += ev.delta.text; sse(ctl, enc, 'delta', { text: ev.delta.text }); }
-          }
+          lines.forEach(handle);
         }
+        buf += dec.decode(); buf.split('\n').forEach(handle);
         const sm = full.match(/SIMBOLI:\s*([\d,\s]+)/i);
         const symbols = sm ? sm[1].split(/[,\s]+/).filter(Boolean).map(Number).filter(n => n >= 1 && n <= hits.length) : [];
         // 6) događaj prema BFF-u (samo pravi korisnici)
