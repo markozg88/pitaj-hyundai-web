@@ -3,7 +3,7 @@
 // Okolina: ANTHROPIC_API_KEY, PHOEBE_MACHINE_KEY, PHOEBE_BFF_URL, ANTHROPIC_MODEL?, ANTHROPIC_QUICK_MODEL?, ALLOW_DEMO?
 import { buildIndex, search, searchMulti } from '../lib/retrieval.js';
 
-export const maxDuration = 60;  // Node runtime (Hobby dopušta do 60 s)
+export const config = { runtime: 'nodejs', maxDuration: 60 };
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const QUICK = process.env.ANTHROPIC_QUICK_MODEL || 'claude-haiku-4-5-20251001';
