@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>html{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif;background:#fafafa}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Santa Fe priručnik asistent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: phone-first chat screen in the loyalty app's language — soft grey ground, navy hero with a cyan glow, airy bubbles, pill input with an inline send button. */
+:root{
+  --bg:#f4f5f8; --card:#ffffff; --fg:#141c2c; --muted:#6f7889; --line:#e4e7ee;
+  --navy:#0c2b5c; --navy-2:#16437f; --navy-fg:#ffffff; --cyan:#19b6dc; --cyan-2:#3ed0f0; --cyan-fg:#062637;
+  --tint:#e9f0fb; --tint-fg:#0c2b5c; --gold-bg:#fbe9c4; --gold-fg:#9a6a12;
+  --user:linear-gradient(135deg,#0c2b5c,#16437f); --user-fg:#ffffff;
+  --warn:#c6362b; --warn-bg:#fdf0ee; --shadow:0 6px 24px rgba(12,43,92,.07);
+  --font:"Inter",-apple-system,"Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1220; --card:#161f33; --fg:#e9edf5; --muted:#98a3b8; --line:#243049;
+  --navy:#132e5c; --navy-2:#1d4787; --cyan:#33c5e8; --cyan-2:#6fdcf5; --cyan-fg:#062637;
+  --tint:#1d2a45; --tint-fg:#9fd9ee; --gold-bg:#4a3a17; --gold-fg:#f3cd7c;
+  --user:linear-gradient(135deg,#1d3d74,#2a5aa3); --user-fg:#ffffff;
+  --warn:#f19a90; --warn-bg:#3a2320; --shadow:0 6px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1220; --card:#161f33; --fg:#e9edf5; --muted:#98a3b8; --line:#243049;
+  --navy:#132e5c; --navy-2:#1d4787; --cyan:#33c5e8; --cyan-2:#6fdcf5; --cyan-fg:#062637;
+  --tint:#1d2a45; --tint-fg:#9fd9ee; --gold-bg:#4a3a17; --gold-fg:#f3cd7c;
+  --user:linear-gradient(135deg,#1d3d74,#2a5aa3); --user-fg:#ffffff;
+  --warn:#f19a90; --warn-bg:#3a2320; --shadow:0 6px 24px rgba(0,0,0,.35); color-scheme:dark}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding-inline:16px;box-sizing:border-box}
+.top{display:flex;align-items:center;gap:10px;padding-block:calc(12px + var(--inset-top,0px)) 10px}.top .ttl{flex:1;min-width:0}
+.back{width:36px;height:36px;border:0;border-radius:50%;background:var(--card);color:var(--navy);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}.back svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.top .hi{font-size:.8rem;color:var(--muted);line-height:1.2}
+.top h1{margin:0;font-size:1.45rem;font-weight:800;color:var(--navy);letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+:root[data-theme="dark"] .top h1{color:var(--fg)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .top h1{color:var(--fg)}}
+.tag{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan-fg);background:linear-gradient(135deg,var(--cyan),var(--cyan-2));border-radius:999px;padding:3px 8px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
+.hero{position:relative;overflow:hidden;transition:padding .25s ease,border-radius .25s ease;background:radial-gradient(120% 140% at 100% 0%,rgba(25,182,220,.55) 0%,rgba(25,182,220,0) 45%),linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:var(--navy-fg);border-radius:24px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 10% 120%,rgba(255,255,255,.10),transparent 60%)}
+.hero>*{position:relative}
+.hero .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.hero .car{font-size:1.2rem;font-weight:800;margin-top:2px;letter-spacing:-.01em}
+.hero .meta{font-size:.78rem;opacity:.75;margin-top:3px}
+.app.compact .hero{padding:9px 16px;border-radius:16px}.app.compact .hero .lbl,.app.compact .hero .meta,.app.compact .vsel{margin-top:8px;font:inherit;font-size:.8rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:5px 10px;max-width:100%}
+.hero .ico{display:none}.app.compact .hero .car{font-size:.95rem;margin:0}.app.compact .top{padding-block:8px 6px}.app.compact .top h1{font-size:1.2rem}
+.hero .ico{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);display:grid;place-items:center;flex:0 0 auto}
+.hero .ico svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.log{flex:1;overflow-y:auto;padding-block:14px 8px;scroll-padding-top:8px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.row{display:flex;gap:8px;align-items:flex-start;max-width:92%}
+.row.user{align-self:flex-end;flex-direction:row-reverse}
+.row.bot{align-self:flex-start}
+.dot{width:24px;height:24px;border-radius:50%;flex:0 0 auto;margin-top:8px;background:linear-gradient(135deg,var(--cyan),var(--navy-2));display:grid;place-items:center}
+.dot svg{width:14px;height:14px;fill:#fff}
+.msg{padding:11px 15px;border-radius:20px;min-width:0;overflow-wrap:anywhere}
+.row.user .msg{background:var(--user);color:var(--user-fg);border-bottom-right-radius:6px}
+.row.bot .msg{background:var(--card);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.msg .body p{margin:0 0 .6em}.msg .body p:last-child{margin:0}
+.msg .body ul,.msg .body ol{margin:.2em 0 .6em;padding-left:1.3em}
+.msg .body strong{font-weight:700}
+.cite{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.03em;color:var(--tint-fg);background:var(--tint);border-radius:999px;padding:2px 8px;margin:0 2px;font-variant-numeric:tabular-nums;vertical-align:1px}
+.warnbox{border-left:3px solid var(--warn);background:var(--warn-bg);padding:6px 10px;border-radius:0 12px 12px 0;margin:.4em 0;font-size:.92em}
+.status{font-size:.85rem;color:var(--muted)}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.5;animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+/* symbols from the manual */
+.syms{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;justify-content:flex-start}
+.syms figure{margin:0;flex:0 1 auto;max-width:150px;background:var(--tint);border-radius:12px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.syms img{width:38px;height:38px;flex:0 0 auto;object-fit:contain;mix-blend-mode:multiply}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .syms img{filter:invert(1);mix-blend-mode:screen}}
+:root[data-theme="dark"] .syms img{filter:invert(1);mix-blend-mode:screen}
+.syms figcaption{font-size:.7rem;line-height:1.2;text-align:left;color:var(--fg);font-weight:600;min-width:0}
+.syms figcaption .pg{display:block;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+details.src{margin-top:10px;font-size:.84rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+details.src summary{cursor:pointer;user-select:none;font-weight:600;color:var(--tint-fg);list-style:none;display:flex;align-items:center;gap:6px}
+details.src summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+details.src[open] summary::before{transform:rotate(45deg)}
+details.src ol{padding-left:1.2em;margin:.5em 0 0}
+details.src li{margin-bottom:.5em}
+details.src .h{color:var(--fg);font-weight:600}
+details.src .pg{font-variant-numeric:tabular-nums}
+details.src a{color:var(--tint-fg);font-weight:600;text-decoration:none}
+details.src p{margin:.15em 0 0;font-size:.78rem}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-block:6px 10px;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;background:var(--tint);color:var(--tint-fg);border:0;border-radius:999px;padding:8px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .1s}
+.chip:active{transform:scale(.97)}
+form{display:flex;gap:8px;align-items:center;padding-block:6px 4px}
+.field{flex:1;display:flex;align-items:center;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 16px;box-shadow:var(--shadow)}
+.field:focus-within{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(25,182,220,.12)}
+.field input{flex:1;min-width:0;font:inherit;border:0;background:transparent;color:var(--fg);padding:8px 0;outline:none}
+button.cam{width:36px;height:36px;flex:0 0 auto;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;margin-right:2px}
+button.cam:hover{color:var(--tint-fg);background:var(--tint)}
+button.cam svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.preview{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 10px;margin-bottom:6px;box-shadow:var(--shadow)}
+.preview img{width:52px;height:52px;object-fit:cover;border-radius:10px;flex:0 0 auto}
+.preview .ptxt{flex:1;min-width:0;font-size:.78rem;line-height:1.3;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.preview .ptxt strong{color:var(--fg)}
+.preview button{width:30px;height:30px;border:0;border-radius:50%;background:var(--tint);color:var(--tint-fg);font-size:1.1rem;cursor:pointer;flex:0 0 auto}
+.row.user .photo{width:100%;max-width:220px;border-radius:12px;display:block;margin-bottom:6px}
+button.primary{width:40px;height:40px;flex:0 0 auto;border:0;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan-2));color:var(--cyan-fg);cursor:pointer;display:grid;place-items:center}
+button.primary svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+button.primary:disabled{opacity:.45;cursor:default}
+button.stop{font:inherit;font-size:.85rem;font-weight:600;background:var(--card);color:var(--warn);border:1px solid var(--line);border-radius:999px;padding:10px 14px;cursor:pointer}
+.foot{font-size:.66rem;color:var(--muted);text-align:center;padding-bottom:calc(8px + var(--inset-bottom,0px) + env(safe-area-inset-bottom,0px));opacity:.85;line-height:1.35}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){.row{animation:in .2s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none;opacity:.6}}
+</style>
+<div class="app">
+<div class="top">
+  <button class="back" id="back" type="button" aria-label="Natrag" hidden><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="ttl"><div class="hi" id="hi">Pozdrav, Marko</div><h1>Priručnik <span class="tag">AI</span></h1></div>
+  <div class="avatar" id="avatar" aria-hidden="true">MG</div>
+</div>
+<div class="hero">
+  <div><div class="lbl">Moje vozilo</div><div class="car" id="car">Santa Fe · ZG4444GZ</div><div class="meta" id="meta">Korisnički priručnik MX5 · MY2024 · 788 str.</div><select id="vsel" class="vsel" hidden aria-label="Odaberite vozilo"></select></div>
+  <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H19"/><path d="M9 7h6M9 10.5h4"/></svg></div>
+</div>
+<div class="log" id="log">
+  <div class="row bot"><div class="dot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg></div><div class="msg"><div class="body"><p>Pitajte me bilo što o svom vozilu. Odgovaram samo iz službenog korisničkog priručnika i uz svaki odgovor navodim stranicu na kojoj to piše.</p></div></div></div>
+</div>
+<div class="chips" id="chips"></div>
+<div class="preview" id="preview" hidden><img id="pimg" alt="Odabrana fotografija"><div class="ptxt"><strong>Fotografija dodana</strong><span>Ne fotografirajte tijekom vožnje. Slika se koristi samo za odgovor i ne pohranjuje se.</span></div><button type="button" id="pdel" aria-label="Ukloni fotografiju">×</button></div>
+<form id="f">
+  <div class="field">
+    <input id="q" type="text" placeholder="Postavite pitanje o vozilu…" autocomplete="off" aria-label="Pitanje">
+    <button class="cam" id="camBtn" type="button" aria-label="Uslikaj" hidden><svg viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.2-2h5.4l1.2 2h1.6A2.5 2.5 0 0 1 20 8.5V17a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17z"/><circle cx="12" cy="12.5" r="3.5"/></svg></button>
+    <input id="camIn" type="file" accept="image/*" capture="environment" hidden>
+    <button class="primary" id="send" type="submit" aria-label="Pitaj"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  </div>
+  <button class="stop" id="stop" type="button" hidden>Stop</button>
+</form>
+<div class="foot">Za kvarove, cijene i termine obratite se ovlaštenom Hyundai partneru ili na 0800 1111.</div>
+</div>
+<script src="manuals.js"></script>
+</script>
+<script>
+(function(){
+let DOCS=[];
+const MANUALS=window.__MANUALS__||[];  // filled from manuals.js
+let PDF='';
+async function loadManual(code){
+  const m=MANUALS.find(x=>x.code===code);if(!m||!m.indexed)return false;
+  document.getElementById('meta').textContent='Učitavam priručnik…';
+  const r=await fetch('index/'+code+'.json');if(!r.ok)return false;
+  DOCS=await r.json();PDF=m.url||'';buildIndex();
+  document.getElementById('meta').textContent=m.title+' · '+DOCS.length+' odlomaka'+(m.pages?' · '+m.pages+' str.':'');
+  return true;
+}
+// ---------- Phoebe module contract (docs/modules.md) ----------
+const PM=window.PhoebeModule||null;
+const CFG=window.__PHOEBE_MODULE__||null;
+function applyModule(){
+  const r=document.documentElement.style;
+  if(CFG&&CFG.theme){const t=CFG.theme;const map={primary:'--navy',accent:'--cyan',background:'--bg',card:'--card',text:'--fg',textMuted:'--muted',border:'--line'};for(const k in map){if(t[k])r.setProperty(map[k],t[k])}}
+  if(CFG&&CFG.insets){r.setProperty('--inset-top',(CFG.insets.top||0)+'px');r.setProperty('--inset-bottom',(CFG.insets.bottom||0)+'px')}
+  const name=CFG&&CFG.user&&CFG.user.firstName;if(name)document.getElementById('hi').textContent='Pozdrav, '+name;
+  const av=document.getElementById('avatar');if(name)av.textContent=name.slice(0,1).toUpperCase();
+  renderVehicle(CFG&&CFG.vehicle);
+  const vs=CFG&&Array.isArray(CFG.vehicles)?CFG.vehicles.filter(x=>x&&x.model):[];
+  if(vs.length>1){const sel=document.getElementById('vsel');sel.hidden=false;sel.innerHTML=vs.map((x,i)=>`<option value="${i}" ${CFG.vehicle&&x.slot===CFG.vehicle.slot?'selected':''}>${esc(x.model)}${x.year?' · '+x.year:''}</option>`).join('');sel.onchange=()=>{renderVehicle(vs[+sel.value])}}
+  const back=document.getElementById('back');back.hidden=!PM;back.onclick=()=>PM&&PM.close();
+  if(!CFG){const sel=document.getElementById('vsel');sel.hidden=false;
+    sel.innerHTML=MANUALS.filter(m=>m.indexed).map(m=>`<option value="${m.code}" ${m.code==='santafe-mx5'?'selected':''}>${esc(m.title)}</option>`).join('');
+    sel.onchange=()=>{const m=MANUALS.find(x=>x.code===sel.value);document.getElementById('car').textContent=m.model;loadManual(m.code)};
+    loadManual('santafe-mx5');}
+}
+// manual selection from the vehicle record (docs/manuals.json codes)
+const MANUAL_BY_GEN={MX5:'santafe-mx5',TM:'santafe-tm','TM PHEV':'santafe-tm-phev',NX4:'tucson-nx4e-gt','NX4 PE':'tucson-nx4pe','NX4 PE HEV':'tucson-nx4pe-hev',NX4E:'tucson-nx4e-hev',TL:'tucson-tl',SX2:'kona-sx2','SX2 HEV':'kona-sx2-hev','SX2 EV':'kona-sx2-ev',OS:'kona-os-hev','OS EV':'kona-os-ev','OS N':'kona-os-n',AC3:'i10-ac3','AC3 PE':'i10-ac3pe',BC3:'i20-bc3','BC3 PE':'i20-bayon-bc3pe-my25','BC3 N':'i20n','BC3 CUV':'bayon-bc3','BC3 PE CUV':'i20-bayon-bc3pe-my25',PDE:'i30-pde','PDE PE2':'i30-pde-pe2','PDE N':'i30n',NE:'ioniq5','NE N':'ioniq5n',CE:'ioniq6',ME:'ioniq9',AXEV:'inster'};
+const AVAILABLE=new Set(MANUALS.filter(m=>m.indexed).map(m=>m.code));
+function pickManual(v){
+  if(!v)return {code:'santafe-mx5',how:'demo'};
+  const dm=(v.dmsModel||'').toUpperCase();const m=dm.match(/\(([A-Z0-9 ]+?)[,)]/);
+  if(m){const gen=m[1].trim();const c=MANUAL_BY_GEN[gen];if(c)return {code:c,how:'dmsModel '+gen}}
+  const y=v.modelYear||v.year;const model=(v.model||'').toLowerCase();
+  if(model.includes('santa'))return {code:y>=2024?'santafe-mx5':'santafe-tm',how:'model+year'};
+  return {code:null,how:'unknown'};
+}
+let CUR_MANUAL='santafe-mx5';
+function renderVehicle(v){
+  const car=document.getElementById('car'),meta=document.getElementById('meta');
+  if(!v){return}
+  car.textContent=[v.model,v.year].filter(Boolean).join(' · ');
+  const pm=pickManual(v);CUR_MANUAL=pm.code;
+  if(!pm.code){meta.textContent='Za ovo vozilo priručnik još nije dostupan u asistentu.';return}
+  if(!AVAILABLE.has(pm.code)){meta.textContent='Priručnik '+pm.code+' još nije obrađen.';return}
+  loadManual(pm.code);
+}
+function openExternal(url){if(PM){PM.open(url);return false}return true}
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-ext]');if(a&&PM){e.preventDefault();PM.open(a.href)}});
+// ---------- retrieval (BM25, light Croatian normalisation) ----------
+const DIA={'č':'c','ć':'c','đ':'d','š':'s','ž':'z'};
+const STOP=new Set('i u na za je se da su od do o kako sto što koji koja koje kad ako ili ali te ne mi vi ga ih im ju mu li ce će bi biti sam ste smo ovo to taj ta te ovaj ova ove kod pri po iz s sa kao može mogu moze više vise samo vozilo vozila vozilu'.split(' '));
+function norm(s){return s.toLowerCase().replace(/[čćđšž]/g,c=>DIA[c]).replace(/[^a-z0-9 ]+/g,' ')}
+function stem(w){return w.length>7?w.slice(0,7):w.length>5?w.slice(0,5):w}
+const SYN={lampica:'svjetlo upozorenja indikator',lampice:'svjetlo upozorenja indikator',zaruljica:'svjetlo upozorenja indikator',ikona:'indikator svjetlo',uskličnik:'upozorenja',uskličnikom:'upozorenja',uskicnik:'upozorenja',guma:'pneumatik',gume:'pneumatik',gumama:'pneumatik',mobitel:'telefon bluetooth',bluetooth:'handsfree',servis:'održavanje raspored',pregrijava:'pregrije pregrijavanje temperatura',akumulator:'baterija sustav punjenja',akumulatora:'baterija sustav punjenja',tempomat:'cruise control',kljuc:'ključ pametni',klima:'klima uređaj grijanje ventilacija',brisaci:'brisač',brisači:'brisač'};
+function expand(s){return s+' '+norm(s).split(' ').map(w=>SYN[w]||'').join(' ')}
+function toks(s){return norm(s).split(' ').filter(w=>w.length>1&&!STOP.has(w)).map(stem)}
+let N=0, df=new Map(), tf=[], len=[], avg=0;
+function buildIndex(){N=DOCS.length;df=new Map();tf=[];len=[];avg=0;
+DOCS.forEach((d,i)=>{const t=toks(d.h1+' '+d.h1+' '+d.h2+' '+d.h2+' '+d.h3+' '+d.h3+' '+d.h3+' '+d.t);const m=new Map();t.forEach(w=>m.set(w,(m.get(w)||0)+1));tf[i]=m;len[i]=t.length;avg+=t.length;m.forEach((_,w)=>df.set(w,(df.get(w)||0)+1))});
+avg/=N;}
+function search(q,k){if(!N)return [];
+  const qt=[...new Set(toks(expand(q)))]; const sc=new Float64Array(N);
+  qt.forEach(w=>{const n=df.get(w);if(!n)return;const idf=Math.log(1+(N-n+.5)/(n+.5));
+    for(let i=0;i<N;i++){const f=tf[i].get(w);if(!f)continue;sc[i]+=idf*(f*2.2)/(f+1.2*(1-.75+.75*len[i]/avg))}});
+  // bonus: exact phrase in text
+  const nq=norm(q).trim(); if(nq.length>6){for(let i=0;i<N;i++){if(norm(DOCS[i].t).includes(nq))sc[i]*=1.5}}
+  return [...sc.keys()].filter(i=>sc[i]>0).sort((a,b)=>sc[b]-sc[a]).slice(0,k).map(i=>DOCS[i]);
+}
+// ---------- UI helpers ----------
+const log=document.getElementById('log'), form=document.getElementById('f'), q=document.getElementById('q'), send=document.getElementById('send'), stopB=document.getElementById('stop');
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function md(s){
+  let h=esc(s);
+  h=h.replace(/\[(?:str\.|stranica)\s*([0-9]+-[0-9]+)\]/gi,'<span class="cite">str. $1</span>');
+  h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  const lines=h.split('\n');let out='',inList=null;
+  for(const raw of lines){const l=raw.trim();
+    const m=l.match(/^([-*•]|\d+[.)])\s+(.*)/);
+    if(m){const tag=/^\d/.test(m[1])?'ol':'ul';if(inList!==tag){if(inList)out+=`</${inList}>`;out+=`<${tag}>`;inList=tag}out+=`<li>${m[2]}</li>`;continue}
+    if(inList){out+=`</${inList}>`;inList=null}
+    if(!l)continue;
+    if(/^(OPASNOST|UPOZORENJE|OPREZ|OPASKA)\b/.test(l))out+=`<div class="warnbox">${l}</div>`;else out+=`<p>${l}</p>`}
+  if(inList)out+=`</${inList}>`;return out}
+const BOTICO='<div class="dot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg></div>';
+const TYPING='<span class="typing" aria-label="Sastavljam odgovor"><i></i><i></i><i></i></span>';
+function add(role,html){const r=document.createElement('div');r.className='row '+role;r.innerHTML=(role==='bot'?BOTICO:'')+'<div class="msg">'+html+'</div>';log.appendChild(r);log.scrollTop=log.scrollHeight;return r}
+function sources(hits){
+  return `<details class="src"><summary>Izvori u priručniku (${hits.length})</summary><ol>`+hits.map(h=>`<li><span class="h">${esc(h.h1)}${h.h2?' › '+esc(h.h2):''}${h.h3?' › '+esc(h.h3):''}</span> <span class="pg">· str. ${esc(h.l||String(h.p))}</span> ${PDF?` · <a href="${PDF}#page=${h.p}" data-ext target="_blank" rel="noopener">otvori PDF</a>`:''}<p>${esc(h.t.slice(0,220))}…</p></li>`).join('')+'</ol></details>'}
+function symbols(hits,pick){
+  const seen=new Set();const list=[];
+  hits.forEach((h,i)=>{if(!h.img)return;if(pick&&!pick.has(i+1))return;const k=h.h3||h.h2;if(seen.has(k))return;seen.add(k);list.push(h)});
+  if(!list.length)return '';
+  return '<div class="syms">'+list.slice(0,4).map(h=>`<figure><img src="${h.img}" alt=""><figcaption>${esc(h.h3||h.h2)}<span class="pg">str. ${esc(h.l)}</span></figcaption></figure>`).join('')+'</div>'}
+// ---------- example questions ----------
+const EX=['Tlak u gumama','Žuta lampica s uskličnikom','Grijanje sjedala','Zamjena motornog ulja','Motor se pregrijava','Smart Cruise Control','Spajanje telefona'];
+const chips=document.getElementById('chips');
+EX.forEach(t=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t;b.onclick=()=>{q.value=t;form.requestSubmit()};chips.appendChild(b)});
+// ---------- LLM ----------
+const RULES=`Ti si asistent za vlasnike vozila Hyundai Santa Fe (MX5, model 2024) u Hrvatskoj. Odgovaraš ISKLJUČIVO na temelju izvadaka iz službenog korisničkog priručnika koje dobiješ u svakoj poruci.
+Pravila:
+1. Odgovaraj na hrvatskom, kratko i jasno, kao ljubazan savjetnik u servisu. Počni jednim kratkim podebljanim naslovom (**...**) koji imenuje o čemu je riječ (npr. naziv lampice ili funkcije), zatim 2–5 kratkih rečenica; nabrajanja samo kad su koraci.
+2. Iza svake tvrdnje navedi stranicu u obliku [str. 5-13] koristeći oznaku "label" izvatka iz kojeg je tvrdnja.
+3. Ako izvatci ne sadrže odgovor, reci to otvoreno ("U priručniku nisam pronašao…") i preporuči ovlaštenog Hyundai partnera ili besplatni broj 0800 1111. Nikad ne izmišljaj podatke, brojke ni postupke.
+4. Sigurnosne napomene (OPASNOST, UPOZORENJE, OPREZ, OPASKA) koje su bitne za pitanje prenesi doslovno, u zasebnom retku koji počinje tom riječju.
+5. Ne postavljaj dijagnoze kvarova i ne procjenjuj cijene. Za sve što zahtijeva servis uputi na ovlaštenog partnera.
+6. Ne spominji da si dobio izvatke; govori kao da poznaješ priručnik.
+7. Neki izvatci imaju oznaku [SIMBOL] – to znači da aplikacija može prikazati sličicu tog simbola s instrument ploče. Ako je pitanje o lampici/indikatoru, na kraju odgovora dodaj zaseban redak točno u obliku: SIMBOLI: 2, 5 (brojevi izvadaka označenih [SIMBOL] koji odgovaraju pitanju, najviše 4). Ako nijedan ne odgovara, izostavi taj redak.`;
+let turns=[], sample=null, ctl=null, photo=null;
+const camBtn=document.getElementById('camBtn'), camIn=document.getElementById('camIn'), preview=document.getElementById('preview'), pimg=document.getElementById('pimg'), pdel=document.getElementById('pdel');
+function setPhoto(f){photo=f||null;if(photo){pimg.src=URL.createObjectURL(photo);preview.hidden=false;q.placeholder='Što vas zanima o slici? (može i prazno)';}else{preview.hidden=true;pimg.removeAttribute('src');q.placeholder='Postavite pitanje o vozilu…';camIn.value=''}}
+camBtn.onclick=()=>{if(imgOK===false){add('bot','<div class="body"><p class="status">U ovom prikazu slanje fotografija nije podržano. Otvorite prototip u pregledniku na računalu ili mobitelu; u pravoj aplikaciji kamera bi bila nativna.</p></div>');return}camIn.click()};
+camIn.addEventListener('change',()=>{if(camIn.files&&camIn.files[0])setPhoto(camIn.files[0])});
+pdel.onclick=()=>setPhoto(null);
+let imgOK=null;
+claude.use('sample').then(s=>{sample=s;if(s){camBtn.hidden=false;s.limits().then(l=>{imgOK=!!(l&&l.images);if(imgOK)camIn.accept=l.images.mediaTypes.join(',')||'image/*'}).catch(()=>{imgOK=null})}if(!s)add('bot','<div class="body"><p class="status">Generiranje odgovora nije dostupno u ovom prikazu; prikazivat ću samo pronađene odlomke iz priručnika.</p></div>')}).catch(()=>{});
+const ERR={not_granted:'Bez dopuštenja za korištenje Claudea ne mogu sastaviti odgovor; ispod su pronađeni odlomci.',rate_limited:'Previše upita odjednom. Pričekajte malo pa pokušajte ponovno.',prompt_too_large:'Pitanje je predugo. Skratite ga.',refused:'Na ovo pitanje ne mogu odgovoriti.',upstream_error:'Veza je prekinuta. Pokušajte ponovno.'};
+form.addEventListener('submit',async e=>{
+  e.preventDefault();let text=q.value.trim();const img=photo;if(!text&&!img)return;q.value='';
+  document.querySelector('.app').classList.add('compact');
+  add('user',`<div class="body">${img?`<img class="photo" src="${pimg.src}" alt="Fotografija">`:''}${esc(text||'Što je ovo na slici?')}</div>`);
+  setPhoto(null);
+  const bot=add('bot','<div class="body">'+TYPING+'</div>');
+  const body=bot.querySelector('.body');
+  let desc='';
+  if(img&&sample){
+    send.disabled=true;
+    try{
+      const r=await sample('Ovo je fotografija iz vozila Hyundai Santa Fe (instrument ploča, tipka, zaslon ili motorni prostor). U 2-3 rečenice na hrvatskom opiši točno što se vidi i što je bitno za priručnik: koji simbol/lampica/tipka/poruka, boja (crvena, žuta, zelena, plava, bijela), svijetli li ili trepće, tekst poruke ako postoji. Zatim u zadnjem retku napiši "KLJUČNE RIJEČI:" i 5-10 riječi kojima bi se to tražilo u korisničkom priručniku (hrvatski, npr. svjetlo upozorenja, tlak ulja, motor, parkirna kočnica).',{images:img,modelTier:'quick',cache:false});
+      desc=r.text.trim();
+    }catch(err){body.innerHTML=`<p class="status">${err.code==='image_rejected'?'Fotografija nije prihvaćena. Pokušajte s drugom slikom.':err.code==='images_unavailable'?'U ovom prikazu slanje fotografija nije podržano. Otvorite prototip u pregledniku.':(ERR[err.code]||ERR.upstream_error)}</p>`;send.disabled=false;return}
+  }
+  const kw=desc?(desc.match(/KLJUČNE RIJEČI:\s*(.+)$/im)||[])[1]||'':'';
+  const hits=search((text+' '+kw+' '+(kw?'':desc)).trim(),10);
+  if(!hits.length){send.disabled=false;body.innerHTML=md('U priručniku nisam pronašao odlomak koji odgovara na to pitanje. Pokušajte preformulirati ili se obratite ovlaštenom Hyundai partneru (0800 1111).');return}
+  if(!sample){send.disabled=false;body.innerHTML='<p>Najbliži odlomci iz priručnika:</p>'+symbols(hits)+sources(hits);bot.querySelector('details').open=true;return}
+  const ctx=hits.map((h,i)=>`[Izvadak ${i+1} | poglavlje: ${h.c} | ${h.h1}${h.h2?' › '+h.h2:''}${h.h3?' › '+h.h3:''} | label: ${h.l||'?'}${h.img?' | [SIMBOL]':''}]\n${h.t.slice(0,1600)}`).join('\n\n');
+  const userTurn=`IZVATCI IZ PRIRUČNIKA:\n${ctx}\n\n${desc?'VLASNIK JE POSLAO FOTOGRAFIJU. Opis fotografije: '+desc.replace(/KLJUČNE RIJEČI:.*$/im,'').trim()+'\n\n':''}PITANJE VLASNIKA: ${text||'Što je ovo na slici i što trebam učiniti?'}`;
+  turns.push({role:'user',content:userTurn});
+  if(turns.length>6)turns=turns.slice(-6);
+  send.disabled=true;stopB.hidden=false;ctl=new AbortController();
+  body.innerHTML=TYPING;
+  try{
+    const {text:ans}=await sample([{role:'user',content:RULES},...turns],{cache:false,signal:ctl.signal,...(img?{images:img}:{}),onText:({text})=>{body.innerHTML=md(text.replace(/\n?\s*SIMBOLI:.*$/im,''));log.scrollTop=log.scrollHeight}});
+    turns.push({role:'assistant',content:ans});
+    const m=ans.match(/SIMBOLI:\s*([\d,\s]+)/i);const pick=m?new Set(m[1].split(/[,\s]+/).filter(Boolean).map(Number)):null;
+    const clean=ans.replace(/\n?\s*SIMBOLI:.*$/im,'').trim();
+    body.innerHTML=md(clean)+(pick?symbols(hits,pick):'')+sources(hits);
+  }catch(err){
+    const partial=err.text?md(err.text):'';
+    if(err.code==='cancelled'){body.innerHTML=partial||'<p class="status">Prekinuto.</p>'}
+    else{body.innerHTML=partial+`<p class="status">${ERR[err.code]||ERR.upstream_error}</p>`+sources(hits);if(err.code==='not_granted'||err.code==='sampling_disabled'){sample=null}}
+    turns.pop();
+  }finally{send.disabled=false;stopB.hidden=true;ctl=null;log.scrollTop=log.scrollHeight;q.focus()}
+});
+stopB.onclick=()=>ctl&&ctl.abort();
+applyModule();
+})();
+</script>
+
+</body>
+</html>
