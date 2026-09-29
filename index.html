@@ -176,26 +176,47 @@ function applyModule(){
     sel.onchange=()=>{const m=MANUALS.find(x=>x.code===sel.value);document.getElementById('car').textContent=m.model;loadManual(m.code)};
     loadManual('santafe-mx5');}
 }
-// manual selection from the vehicle record (docs/manuals.json codes)
-const MANUAL_BY_GEN={MX5:'santafe-mx5',TM:'santafe-tm','TM PHEV':'santafe-tm-phev',NX4:'tucson-nx4e-gt','NX4 PE':'tucson-nx4pe','NX4 PE HEV':'tucson-nx4pe-hev',NX4E:'tucson-nx4e-hev',TL:'tucson-tl',SX2:'kona-sx2','SX2 HEV':'kona-sx2-hev','SX2 EV':'kona-sx2-ev',OS:'kona-os-hev','OS EV':'kona-os-ev','OS N':'kona-os-n',AC3:'i10-ac3','AC3 PE':'i10-ac3pe',BC3:'i20-bc3','BC3 PE':'i20-bayon-bc3pe-my25','BC3 N':'i20n','BC3 CUV':'bayon-bc3','BC3 PE CUV':'i20-bayon-bc3pe-my25',PDE:'i30-pde','PDE PE2':'i30-pde-pe2','PDE N':'i30n',NE:'ioniq5','NE N':'ioniq5n',CE:'ioniq6',ME:'ioniq9',AXEV:'inster'};
+// ---- odabir priručnika iz zapisa vozila (docs/manuals.json → manuals.js) ----
 const AVAILABLE=new Set(MANUALS.filter(m=>m.indexed).map(m=>m.code));
+const GEN_HINT={MX5:'santafe-mx5',TM:'santafe-tm','TM PHEV':'santafe-tm-phev','NX4 PE':'tucson-nx4pe','NX4 PE HEV':'tucson-nx4pe-hev',NX4E:'tucson-nx4e-hev',TL:'tucson-tl',SX2:'kona-sx2','SX2 HEV':'kona-sx2-hev','SX2 EV':'kona-sx2-ev','OS EV':'kona-os-ev','OS N':'kona-os-n','AC3 PE':'i10-ac3pe','BC3 PE':'i20-bayon-bc3pe-my25','BC3 N':'i20n','BC3 CUV':'bayon-bc3','BC3 PE CUV':'i20-bayon-bc3pe-my25','PDE PE2':'i30-pde-pe2','PDE N':'i30n','NE N':'ioniq5n',CE:'ioniq6',ME:'ioniq9',AXEV:'inster'};
+const normModel=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function variantOf(str){const u=(str||'').toUpperCase();if(/\bPHEV\b|PLUG-?IN/.test(u))return 'PHEV';if(/\bEV\b|ELECTRIC|ELEKTRI/.test(u))return 'EV';if(/\bHEV\b|HYBRID|HIBRID/.test(u))return 'HEV';if(/\bN\b(?!X)/.test(u)&&!/\bNX4/.test(u))return 'N';return ''}
+function parseDms(dm){const m=/^\s*([^(]+?)\s*(?:\(([^)]*)\))?\s*$/.exec(dm||'');if(!m)return{};const inside=(m[2]||'').split(',').map(x=>x.trim());return{name:m[1].trim(),gen:(inside[0]||'').toUpperCase(),range:inside.slice(1).join(',')}}
 function pickManual(v){
-  if(!v)return {code:'santafe-mx5',how:'demo'};
-  const dm=(v.dmsModel||'').toUpperCase();const m=dm.match(/\(([A-Z0-9 ]+?)[,)]/);
-  if(m){const gen=m[1].trim();const c=MANUAL_BY_GEN[gen];if(c)return {code:c,how:'dmsModel '+gen}}
-  const y=v.modelYear||v.year;const model=(v.model||'').toLowerCase();
-  if(model.includes('santa'))return {code:y>=2024?'santafe-mx5':'santafe-tm',how:'model+year'};
-  return {code:null,how:'unknown'};
+  if(!v)return{code:null,how:'none'};
+  const d=parseDms(v.dmsModel);const y=v.modelYear||v.year||null;
+  const nameKey=normModel(d.name||v.model);const variant=variantOf((v.dmsModel||'')+' '+(v.model||''));
+  // 1) kandidati po modelu
+  const parts=m=>(m.model||'').split('/').map(normModel);
+  let cands=MANUALS.filter(m=>m.indexed&&nameKey&&parts(m).includes(nameKey));
+  if(!cands.length)cands=MANUALS.filter(m=>m.indexed&&nameKey&&parts(m).some(p=>p.split(' ')[0]===nameKey.split(' ')[0]));
+  if(!cands.length)return{code:null,how:'no-model',cands:[]};
+  // 2) pogon
+  const vt=m=>(m.variant||'').toUpperCase().split(/[\/\s(),]+/).filter(Boolean);
+  const byVar=cands.filter(m=>{const t=vt(m);return variant?t.includes(variant)||t.includes('SVE'):!(t.length===1&&/^(EV|PHEV|HEV|N)$/.test(t[0]))});
+  if(byVar.length)cands=byVar;
+  // 3) generacija (točan kod) – ako je jednoznačna
+  if(d.gen&&GEN_HINT[d.gen]){const g=cands.find(m=>m.code===GEN_HINT[d.gen]);if(g&&(!y||(g.my_from<=y&&(g.my_to==null||g.my_to>=y))))return{code:g.code,how:'gen '+d.gen,cands}}
+  // 4) godište
+  if(y){const inRange=cands.filter(m=>m.my_from<=y&&(m.my_to==null||m.my_to>=y));
+    if(inRange.length){inRange.sort((a,b)=>b.my_from-a.my_from);return{code:inRange[0].code,how:'model+year '+y,cands}}
+    const older=cands.filter(m=>m.my_from<=y).sort((a,b)=>b.my_from-a.my_from);if(older.length)return{code:older[0].code,how:'nearest year',cands};
+    const newer=cands.slice().sort((a,b)=>a.my_from-b.my_from);return{code:newer[0].code,how:'earliest',cands}}
+  if(cands.length===1)return{code:cands[0].code,how:'only',cands};
+  return{code:null,how:'ambiguous',cands};
 }
 let CUR_MANUAL='santafe-mx5';
+function showPicker(list,selected,onPick){const sel=document.getElementById('vsel');sel.hidden=false;sel.innerHTML='<option value="">Odaberite priručnik…</option>'+list.map(m=>`<option value="${m.code}" ${m.code===selected?'selected':''}>${esc(m.title)}</option>`).join('');sel.onchange=()=>{if(sel.value)onPick(sel.value)}}
 function renderVehicle(v){
   const car=document.getElementById('car'),meta=document.getElementById('meta');
-  if(!v){return}
+  if(!v)return;
   car.textContent=[v.model,v.year].filter(Boolean).join(' · ');
-  const pm=pickManual(v);CUR_MANUAL=pm.code;
-  if(!pm.code){meta.textContent='Za ovo vozilo priručnik još nije dostupan u asistentu.';return}
-  if(!AVAILABLE.has(pm.code)){meta.textContent='Priručnik '+pm.code+' još nije obrađen.';return}
-  loadManual(pm.code);
+  const pm=pickManual(v);
+  if(pm.code&&AVAILABLE.has(pm.code)){CUR_MANUAL=pm.code;loadManual(pm.code);
+    if(pm.cands&&pm.cands.length>1)showPicker(pm.cands,pm.code,c=>{CUR_MANUAL=c;loadManual(c)});
+    return}
+  meta.textContent='Odaberite priručnik za svoje vozilo:';
+  showPicker(pm.cands&&pm.cands.length?pm.cands:MANUALS.filter(m=>m.indexed),null,c=>{CUR_MANUAL=c;loadManual(c)});
 }
 function openExternal(url){if(PM){PM.open(url);return false}return true}
 document.addEventListener('click',e=>{const a=e.target.closest('a[data-ext]');if(a&&PM){e.preventDefault();PM.open(a.href)}});
