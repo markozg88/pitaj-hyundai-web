@@ -42,7 +42,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .top h1{color:var(--fg)}}
 .tag{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan-fg);background:linear-gradient(135deg,var(--cyan),var(--cyan-2));border-radius:999px;padding:3px 8px}
 .avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
-.hero{position:relative;overflow:hidden;transition:padding .25s ease,border-radius .25s ease;background:radial-gradient(120% 140% at 100% 0%,rgba(25,182,220,.55) 0%,rgba(25,182,220,0) 45%),linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:var(--navy-fg);border-radius:24px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.hero{position:relative;overflow:visible;transition:padding .25s ease,border-radius .25s ease;background:radial-gradient(120% 140% at 100% 0%,rgba(25,182,220,.55) 0%,rgba(25,182,220,0) 45%),linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);color:var(--navy-fg);border-radius:24px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:var(--shadow)}
 .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 10% 120%,rgba(255,255,255,.10),transparent 60%)}
 .hero>*{position:relative}
 .hero .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
@@ -51,7 +51,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-
 .hero .car{overflow-wrap:anywhere}
 .hero .meta{font-size:.78rem;opacity:.75;margin-top:3px;max-width:100%;overflow-wrap:anywhere}
 .app.compact .hero{padding:9px 16px;border-radius:16px}.app.compact .hero .lbl,.app.compact .hero .meta,.app.compact .hero .ico{display:none}.app.compact .hero .car{font-size:.95rem;margin:0}.app.compact .top{padding-block:8px 6px}.app.compact .top h1{font-size:1.2rem}
-.vsel{margin-top:8px;font:inherit;font-size:.8rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;color:#fff;border-radius:999px;padding:5px 28px 5px 10px;max-width:100%;width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.vsel{position:relative;z-index:1;margin-top:8px;font:inherit;font-size:.8rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;color:#fff;border-radius:999px;padding:5px 28px 5px 10px;max-width:100%;width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 .app.compact .vsel{margin-top:6px}
 .vsel option{color:#111}
 .hero .ico{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);display:grid;place-items:center;flex:0 0 auto}
@@ -160,18 +160,27 @@ async function loadManual(code){
   return true;
 }
 // ---------- Phoebe module contract (docs/modules.md) ----------
-const PM=window.PhoebeModule||null;
-const CFG=window.__PHOEBE_MODULE__||null;
-function applyModule(){
+let PM=null, CFG=null;   // postavlja se u applyModule, nakon što aplikacija upiše konfiguraciju
+const inApp=()=>!!(window.ReactNativeWebView||window.PhoebeModule||window.__PHOEBE_MODULE__);
+function whenPhoebeReady(start){
+  if(window.__PHOEBE_MODULE__||!window.ReactNativeWebView)return start(window.__PHOEBE_MODULE__||null);
+  let started=false;const t0=Date.now();
+  const go=()=>{if(started)return;started=true;start(window.__PHOEBE_MODULE__||null)};
+  window.addEventListener('phoebemodule:ready',go);
+  (function poll(){if(window.__PHOEBE_MODULE__||Date.now()-t0>3000)return go();setTimeout(poll,50)})();
+}
+function closeModule(){if(window.PhoebeModule)window.PhoebeModule.close();else if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify({type:'close'}));else history.back()}
+function applyModule(cfg){
+  CFG=cfg||null;PM=window.PhoebeModule||null;
   const r=document.documentElement.style;
   if(CFG&&CFG.theme){const t=CFG.theme;const map={primary:'--navy',accent:'--cyan',background:'--bg',card:'--card',text:'--fg',textMuted:'--muted',border:'--line'};for(const k in map){if(t[k])r.setProperty(map[k],t[k])}}
-  if(CFG&&CFG.insets){r.setProperty('--inset-top',(CFG.insets.top||0)+'px');r.setProperty('--inset-bottom',(CFG.insets.bottom||0)+'px')}
+  if(CFG&&CFG.insets){r.setProperty('--inset-bottom',(CFG.insets.bottom||0)+'px')}  // insets.top drži aplikacija
   const name=CFG&&CFG.user&&CFG.user.firstName;if(name)document.getElementById('hi').textContent='Pozdrav, '+name;
   const av=document.getElementById('avatar');if(name)av.textContent=name.slice(0,1).toUpperCase();
   renderVehicle(CFG&&CFG.vehicle);
   const vs=CFG&&Array.isArray(CFG.vehicles)?CFG.vehicles.filter(x=>x&&x.model):[];
   if(vs.length>1){const sel=document.getElementById('vsel');sel.hidden=false;sel.innerHTML=vs.map((x,i)=>`<option value="${i}" ${CFG.vehicle&&x.slot===CFG.vehicle.slot?'selected':''}>${esc(x.model)}${x.year?' · '+x.year:''}</option>`).join('');sel.onchange=()=>{renderVehicle(vs[+sel.value])}}
-  const back=document.getElementById('back');back.hidden=!PM;back.onclick=()=>PM&&PM.close();
+  const back=document.getElementById('back');back.hidden=!inApp();back.onclick=closeModule;
   if(!CFG){const sel=document.getElementById('vsel');sel.hidden=false;
     sel.innerHTML=MANUALS.filter(m=>m.indexed).map(m=>`<option value="${m.code}" ${m.code==='santafe-mx5'?'selected':''}>${esc(m.title)}</option>`).join('');
     sel.onchange=()=>{const m=MANUALS.find(x=>x.code===sel.value);document.getElementById('car').textContent=m.model;loadManual(m.code)};
@@ -219,8 +228,7 @@ function renderVehicle(v){
   meta.textContent='Odaberite priručnik za svoje vozilo:';
   showPicker(pm.cands&&pm.cands.length?pm.cands:MANUALS.filter(m=>m.indexed),null,c=>{CUR_MANUAL=c;loadManual(c)});
 }
-function openExternal(url){if(PM){PM.open(url);return false}return true}
-document.addEventListener('click',e=>{const a=e.target.closest('a[data-ext]');if(a&&PM){e.preventDefault();PM.open(a.href)}});
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-ext]');if(a&&window.PhoebeModule){e.preventDefault();window.PhoebeModule.open(a.href)}});
 // ---------- retrieval (BM25, light Croatian normalisation) ----------
 const DIA={'č':'c','ć':'c','đ':'d','š':'s','ž':'z'};
 const STOP=new Set('i u na za je se da su od do o kako sto što koji koja koje kad ako ili ali te ne mi vi ga ih im ju mu li ce će bi biti sam ste smo ovo to taj ta te ovaj ova ove kod pri po iz s sa kao može mogu moze više vise samo vozilo vozila vozilu'.split(' '));
@@ -296,7 +304,7 @@ async function askBackend(text,img,body,bot){
   send.disabled=true;stopB.hidden=false;ctl=new AbortController();
   let hits=[],full='',res=null;
   try{
-    const payload={token:CFG&&CFG.token||null,model:CUR_MANUAL,question:text,history:turns.slice(-6)};
+    const payload={token:(window.__PHOEBE_MODULE__||CFG||{}).token||null,model:CUR_MANUAL,question:text,history:turns.slice(-6)};
     if(img)payload.image=await fileToDataUrl(img);
     res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctl.signal});
     if(!res.ok){let j={};try{j=await res.json()}catch{}body.innerHTML=`<p class="status">${BERR[j.error]||BERR.server_error}</p>`;return}
@@ -355,7 +363,7 @@ form.addEventListener('submit',async e=>{
   }finally{send.disabled=false;stopB.hidden=true;ctl=null;log.scrollTop=log.scrollHeight;q.focus()}
 });
 stopB.onclick=()=>ctl&&ctl.abort();
-applyModule();
+whenPhoebeReady(applyModule);
 })();
 </script>
 
